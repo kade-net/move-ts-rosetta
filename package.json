@@ -23,6 +23,6 @@
     "tsup": "^8.3.5"
   },
   "bin": {
-    "aptos-ts-rosetta": "./dist/cli.js"
+    "move-ts-rosetta": "./dist/cli.js"
   }
 }

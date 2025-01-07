@@ -1,4 +1,4 @@
-import { assert } from "console";
+import { assert } from "console"
 import { existsSync, mkdirSync, readFileSync, writeFile, writeFileSync } from "fs";
 import path from "path";
 import { LEXICON } from "./types";
@@ -6,6 +6,57 @@ import { transformConstant, transformFunction, transformStruct } from "./lexicon
 import * as process from "node:process";
 import fs from "node:fs";
 import {parseModule} from "./translator";
+
+const UTILS_FILE_CONTENT = `
+import { Aptos, AptosConfig, Account, Network, AccountAddress, SimpleTransaction } from '@aptos-labs/ts-sdk'
+
+const env = process.env.NEXT_PUBLIC_APTOS_NETWORK ?? process.env.APTOS_NETWORK ?? 'testnet'
+const aptos = new Aptos(new AptosConfig({
+    network: env == 'mainnet' ? 
+    Network.MAINNET : env == 'testnet' ? 
+    Network.TESTNET : env == 'devnet' ? 
+    Network.DEVNET : env == 'local' ? 
+    Network.LOCAL : env == 'custom' ? 
+    Network.CUSTOM : Network.TESTNET
+}))
+
+export async function buildTransaction(funcName: string, args: Record<string, any>, sender: string){
+    const transformedArgs = Object.entries(args).map(p=>p.at(1))
+
+    const transaction = await aptos.transaction.build.simple({
+        sender: sender,
+        data: {
+            function: funcName as any,
+            functionArguments: transformedArgs,
+        }
+    })
+
+    return transaction
+}
+
+export async function submitTransaction(signer: Account, transaction: SimpleTransaction) {
+    const commitedTxn = await aptos.transaction.signAndSubmitTransaction({
+        transaction,
+        signer
+    })
+
+    return commitedTxn
+}
+
+export async function composeAndSubmitTransaction(signer: Account, funcName: string, args: Record<string, any>) {
+    const transaction = await buildTransaction(funcName, args, signer.accountAddress.toString())
+    const commitedTxn = await submitTransaction(signer, transaction)
+
+    return commitedTxn
+}
+
+export async function queryFn<T extends {}>(locationAddress: string, path: string) {
+    return aptos.getAccountResource<T>({
+        accountAddress: locationAddress,
+        resourceType: path as any
+    })
+}
+`
 
 
 function createContractFolder(contractName: string, modules: Array<string>, parentFolder: string) {
@@ -73,11 +124,9 @@ function initializeDirectoryStructure(moduleName: string, contractFolder: string
 
     console.log("MODULE FILE STRUCTURE INITIALIZATION COMPLETE")
 
-    const utilsContent = readFileSync('./utils.ts', {encoding: 'utf-8'})
-
     const utilsFile = path.join(moduleFolder, 'utils.ts')
 
-    writeFileSync(utilsFile, utilsContent, {
+    writeFileSync(utilsFile, UTILS_FILE_CONTENT, {
         encoding: 'utf-8'
     })
 
@@ -184,7 +233,7 @@ function main(targetDir: string, contractDir: string, contractAddress: string) {
     const contractFolder = createContractFolder(contract.name!, contract.modules, targetDir)
 
     for (const lexicon of moduleLexicons) {
-        const BASE_PATH = `${contractAddress}::${contract.name}::${lexicon.module}::`
+        const BASE_PATH = `${contractAddress}::${lexicon.module}::`
         transpileModule(contractFolder,BASE_PATH, lexicon)
     }
 }

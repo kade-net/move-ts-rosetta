@@ -1,0 +1,28 @@
+{
+  "name": "aptos-ts-rosetta",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "transpile": "rm -rf ./output/test && ts-node --esm ./cli.ts -t output -s samples -a 0xtest",
+    "build": "rm -rf dist && tsup && pnpm run to-executable",
+    "to-executable": "chmod +x dist/cli.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@aptos-labs/ts-sdk": "^1.33.1",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "commander": "^13.0.0",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.3.5"
+  },
+  "bin": {
+    "aptos-ts-rosetta": "./dist/cli.js"
+  }
+}

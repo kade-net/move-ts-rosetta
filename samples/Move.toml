@@ -1,0 +1,20 @@
+[package]
+name = "test"
+version = "1.0.0"
+authors = []
+
+[addresses]
+fds="0x4321"
+[dev-addresses]
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "rewards"
+subdir = "aptos-move/framework/aptos-framework"
+
+[dependencies.AptosTokenObjects]
+git = "https://github.com/aptos-labs/aptos-core.git"
+subdir = "aptos-move/framework/aptos-token-objects/"
+rev = "rewards"
+
+[dev-dependencies]
